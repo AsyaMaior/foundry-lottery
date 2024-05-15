@@ -21,10 +21,13 @@ contract DeployRaffle is Script {
             address linkToken
         ) = hc.activeNetworkConfig();
 
+        uint256 deployerKey = hc.deployerKey();
+
         if (subscriptionId == 0) {
             CreateSubscription createSubscription = new CreateSubscription();
             subscriptionId = createSubscription.createSubscription(
-                vrfCoordinator
+                vrfCoordinator,
+                deployerKey
             );
 
             FundSubscription fundSubscription = new FundSubscription();
@@ -50,7 +53,8 @@ contract DeployRaffle is Script {
         addConsumer.addConsumer(
             vrfCoordinator,
             subscriptionId,
-            address(raffle)
+            address(raffle),
+            deployerKey
         );
 
         return (raffle, hc);

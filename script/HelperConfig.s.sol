@@ -18,21 +18,28 @@ contract HelperConfig is Script {
     }
 
     NetworkConfig public activeNetworkConfig;
+    uint256 public deployerKey;
+
+    uint256 public DEFAULT_ANVIL_PRIVATE_KEY =
+        0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80;
 
     constructor() {
         if (block.chainid == 11155111) {
-            activeNetworkConfig = getSepoliaNetworkConfig();
+            (activeNetworkConfig, deployerKey) = getSepoliaNetworkConfig();
         } else {
-            activeNetworkConfig = getOrCreateAnvilNetworkConfig();
+            (
+                activeNetworkConfig,
+                deployerKey
+            ) = getOrCreateAnvilNetworkConfig();
         }
     }
 
     function getSepoliaNetworkConfig()
         public
-        pure
-        returns (NetworkConfig memory)
+        view
+        returns (NetworkConfig memory, uint256)
     {
-        return
+        return (
             NetworkConfig({
                 entranceFee: 0.01 ether,
                 interval: 30,
@@ -41,15 +48,17 @@ contract HelperConfig is Script {
                 subscriptionId: 0,
                 callbackGasLimit: 500000,
                 linkToken: 0x779877A7B0D9E8603169DdbD7836e478b4624789
-            });
+            }),
+            vm.envUint("PRIVATE_KEY")
+        );
     }
 
     function getOrCreateAnvilNetworkConfig()
         public
-        returns (NetworkConfig memory)
+        returns (NetworkConfig memory, uint256)
     {
         if (activeNetworkConfig.vrfCoordinator != address(0)) {
-            return activeNetworkConfig;
+            return (activeNetworkConfig, deployerKey);
         }
 
         uint96 baseFee = 0.25 ether; //LINK
@@ -63,7 +72,7 @@ contract HelperConfig is Script {
         LinkToken link = new LinkToken();
         vm.stopBroadcast();
 
-        return
+        return (
             NetworkConfig({
                 entranceFee: 0.01 ether,
                 interval: 30,
@@ -72,6 +81,8 @@ contract HelperConfig is Script {
                 subscriptionId: 0,
                 callbackGasLimit: 500000,
                 linkToken: address(link)
-            });
+            }),
+            DEFAULT_ANVIL_PRIVATE_KEY
+        );
     }
 }

@@ -12,13 +12,19 @@ contract CreateSubscription is Script {
     function createSubscriptionUsingConfig() public returns (uint64) {
         HelperConfig hc = new HelperConfig();
         (, , address vrfCoordinator, , , , ) = hc.activeNetworkConfig();
-        return createSubscription(vrfCoordinator);
+        uint256 deployerKey = hc.deployerKey();
+        return createSubscription(vrfCoordinator, deployerKey);
     }
 
     function createSubscription(
-        address _vrfCoordinator
+        address _vrfCoordinator,
+        uint256 _deployerKey
     ) public returns (uint64) {
-        return VRFCoordinatorV2Interface(_vrfCoordinator).createSubscription();
+        vm.startBroadcast(_deployerKey);
+        uint64 sub_id = VRFCoordinatorV2Interface(_vrfCoordinator)
+            .createSubscription();
+        vm.stopBroadcast();
+        return sub_id;
     }
 
     function run() external returns (uint64) {
@@ -27,7 +33,7 @@ contract CreateSubscription is Script {
 }
 
 contract FundSubscription is Script {
-    uint256 private constant FUND_AMOUNT = 0.01 ether;
+    uint256 private constant FUND_AMOUNT = 0.5 ether;
 
     function fundSubscriptionUsingConfig() public {
         HelperConfig hc = new HelperConfig();
@@ -42,16 +48,20 @@ contract FundSubscription is Script {
         address linkToken
     ) public {
         if (block.chainid == 31337) {
+            vm.startBroadcast();
             VRFCoordinatorV2Mock(vrfCoordinator).fundSubscription(
                 subId,
                 uint96(FUND_AMOUNT)
             );
+            vm.stopBroadcast();
         } else {
+            vm.startBroadcast();
             LinkToken(linkToken).transferAndCall(
                 vrfCoordinator,
                 FUND_AMOUNT,
                 abi.encode(subId)
             );
+            vm.stopBroadcast();
         }
     }
 
@@ -60,25 +70,29 @@ contract FundSubscription is Script {
     }
 }
 
-contract AddConsumer {
+contract AddConsumer is Script {
     function addConsumerUsingConfig(address raffle) public {
         HelperConfig hc = new HelperConfig();
         (, , address vrfCoordinator, , uint64 subId, , ) = hc
             .activeNetworkConfig();
-        addConsumer(vrfCoordinator, subId, raffle);
+        uint256 deployerKey = hc.deployerKey();
+        addConsumer(vrfCoordinator, subId, raffle, deployerKey);
     }
 
     function addConsumer(
         address vrfCoordinator,
         uint64 subId,
-        address raffle
+        address raffle,
+        uint256 _deployerKey
     ) public {
+        vm.startBroadcast(_deployerKey);
         VRFCoordinatorV2Interface(vrfCoordinator).addConsumer(subId, raffle);
+        vm.stopBroadcast();
     }
 
     function run() external {
         address raffle = DevOpsTools.get_most_recent_deployment(
-            "FundMe",
+            "Raffle",
             block.chainid
         );
         addConsumerUsingConfig(raffle);
