@@ -52,6 +52,13 @@ contract RaffleTest is Test {
         _;
     }
 
+    modifier skipFork() {
+        if (block.chainid != 31337) {
+            return;
+        }
+        _;
+    }
+
     //////// Functions //////////
 
     function testRaffleStateIsOpen() public view {
@@ -184,7 +191,7 @@ contract RaffleTest is Test {
     // next test is Fuzz test, it check that fulfillRandomWords revert with any requestId
     function testFulFillRndomWordsRevertIfPerformUpkeepNotCall(
         uint256 randomRequestId
-    ) public enterRaffle passTime {
+    ) public enterRaffle passTime skipFork {
         vm.expectRevert("nonexistent request"); //type of error in fulfillRandomWords function
 
         // next line we may make only in our fake chain, in real chain only Chainlink Node may make this call
@@ -198,6 +205,7 @@ contract RaffleTest is Test {
         public
         enterRaffle
         passTime
+        skipFork
     {
         uint256 numberOfPlayers = 6;
         for (uint256 i = 1; i < numberOfPlayers; i++) {

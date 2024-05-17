@@ -50,6 +50,7 @@ contract HelperConfig is Script {
                 linkToken: 0x779877A7B0D9E8603169DdbD7836e478b4624789
             }),
             vm.envUint("PRIVATE_KEY")
+            // DEFAULT_ANVIL_PRIVATE_KEY
         );
     }
 
